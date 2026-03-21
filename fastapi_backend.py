@@ -254,18 +254,28 @@ async def analyze(ticker: str, mode: str = "full", context: str = ""):
     """
     ticker = ticker.upper().strip()
 
+    if ticker == "PORTFOLIO":
+        raise HTTPException(status_code=400, detail="Для анализа портфеля используйте POST /analyze/portfolio")
+
     if mode not in ANALYSIS_MODES:
         raise HTTPException(status_code=400, detail=f"Неизвестный mode. Доступные: {list(ANALYSIS_MODES.keys())}")
 
     # 1. Данные
-    try:
-        df = yf.download(ticker, period="3mo", progress=False)
-        if df.empty or len(df) < 50:
-            raise ValueError("Недостаточно данных")
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = df.columns.get_level_values(0)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Ошибка загрузки {ticker}: {str(e)}")
+    df = None
+    last_error = None
+    for attempt in range(3):
+        try:
+            df = yf.download(ticker, period="3mo", progress=False)
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+            if not df.empty and len(df) >= 50:
+                break
+            last_error = "Недостаточно данных"
+            df = None
+        except Exception as e:
+            last_error = str(e)
+    if df is None:
+        raise HTTPException(status_code=400, detail=f"Ошибка загрузки {ticker}: {last_error}")
 
     # 2. Индикаторы + скоринг
     ind = calc_indicators(df)
