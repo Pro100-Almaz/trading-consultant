@@ -40,6 +40,10 @@ ANALYSIS_MODES: dict[str, dict] = {
         "categories": ["competitors"],
         "description": "Конкурентный анализ (Bain)",
     },
+    "portfolio_builder": {
+        "categories": ["blackrock_portfolio"],
+        "description": "Построение портфеля по методологии BlackRock",
+    },
 }
 
 

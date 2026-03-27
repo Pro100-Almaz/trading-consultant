@@ -2,7 +2,7 @@ import glob
 import os
 
 import chromadb
-from chromadb.utils import embedding_functions
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 
 from app.config import settings
 
@@ -19,15 +19,14 @@ CATEGORY_MAP = {
     "08_competitors": "competitors",
     "09_full_report": "master",
     "10_portfolio_user": "user_portfolio",
+    "11_portfolio_blackrock": "blackrock_portfolio",
 }
 
 
 class VectorStore:
     def __init__(self) -> None:
         self.client = chromadb.Client()
-        self.ef = embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name="all-MiniLM-L6-v2"
-        )
+        self.ef = DefaultEmbeddingFunction()
         self.collection = self.client.get_or_create_collection(
             name=COLLECTION_NAME,
             embedding_function=self.ef,

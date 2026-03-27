@@ -6,13 +6,27 @@ from sqlalchemy.orm import Session
 
 from app.dependencies import get_current_user, get_db
 from app.domain.models import Plan, User
-from app.domain.schemas import AnalysisHistoryItem, AnalysisResponse, PortfolioRequest, PortfolioResponse
+from app.domain.schemas import (
+    AnalysisHistoryItem,
+    AnalysisResponse,
+    PortfolioBuilderRequest,
+    PortfolioBuilderResponse,
+    PortfolioRequest,
+    PortfolioResponse,
+)
 from app.infrastructure.claude_client import complete
 from app.infrastructure.market_data import fetch_ohlcv
 from app.repositories.analysis_repository import AnalysisRepository
 from app.repositories.user_repository import UserRepository
 from app.services.analysis_service import ANALYSIS_MODES, build_rag_prompt, calc_indicators, calc_score
 from app.services.auth_service import PLAN_LIMITS
+from app.services.portfolio_builder_service import (
+    STRATEGY_METRICS,
+    build_allocations,
+    build_builder_prompt,
+    get_rag_context,
+    parse_claude_response,
+)
 from app.services.portfolio_service import build_portfolio_rag_prompt
 
 router = APIRouter()
@@ -37,6 +51,54 @@ def _apply_limits(user: User, mode: str, db: Session) -> None:
 
     user.daily_usage += 1
     UserRepository(db).save(user)
+
+
+@router.post("/portfolio-builder", response_model=PortfolioBuilderResponse)
+async def portfolio_builder(
+    req: PortfolioBuilderRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if req.amount <= 0:
+        raise HTTPException(status_code=400, detail={"error": "invalidAmount"})
+
+    _apply_limits(current_user, "portfolio_builder", db)
+
+    strategy = req.risk_strategy.value
+    rag_context = get_rag_context()
+    prompt = build_builder_prompt(req.amount, strategy, rag_context)
+
+    try:
+        response_text = complete(prompt)
+    except Exception as e:
+        raise HTTPException(status_code=503, detail={"error": "aiUnavailable", "message": str(e)})
+
+    try:
+        claude_data = parse_claude_response(response_text)
+        allocations = build_allocations(claude_data["allocations"], req.amount)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={"error": "parseError", "message": str(e)})
+
+    fallback = STRATEGY_METRICS[strategy]
+    analysis = claude_data.get("analysis", "")
+
+    AnalysisRepository(db).save(
+        ticker="PORTFOLIO_BUILDER",
+        mode="portfolio_builder",
+        analysis=analysis,
+        user_id=current_user.id,
+    )
+
+    return PortfolioBuilderResponse(
+        strategy=strategy,
+        total_amount=round(req.amount, 2),
+        expected_return_min=claude_data.get("expected_return_min", fallback["return_min"]),
+        expected_return_max=claude_data.get("expected_return_max", fallback["return_max"]),
+        max_drawdown=claude_data.get("max_drawdown", fallback["max_drawdown"]),
+        rebalancing_frequency=claude_data.get("rebalancing_frequency", fallback["rebalancing"]),
+        allocations=allocations,
+        analysis=analysis,
+    )
 
 
 @router.post("/portfolio", response_model=PortfolioResponse)

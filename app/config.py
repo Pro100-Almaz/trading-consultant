@@ -6,6 +6,7 @@ BASE_DIR = Path(__file__).parent.parent
 
 class Settings(BaseSettings):
     claude_api_key: str
+    fmp_api_key: str
     database_url: str = f"sqlite:///{BASE_DIR}/trading.db"
     documents_dir: str = str(BASE_DIR / "documents")
     jwt_secret_key: str = "dev-secret-change-in-production"

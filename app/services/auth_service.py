@@ -1,32 +1,30 @@
 from datetime import datetime, timedelta
 
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from app.config import settings
 from app.domain.models import Plan, User
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 PLAN_LIMITS: dict[Plan, dict] = {
     Plan.free:    {"daily_limit": 3,  "modes": {"technical"}},
     Plan.pro:     {"daily_limit": 30, "modes": {
         "full", "technical", "screener", "risk", "dcf",
-        "earnings", "portfolio", "dividends", "competitors",
+        "earnings", "portfolio", "dividends", "competitors", "portfolio_builder",
     }},
     Plan.premium: {"daily_limit": -1, "modes": {
         "full", "technical", "screener", "risk", "dcf",
-        "earnings", "portfolio", "dividends", "competitors",
+        "earnings", "portfolio", "dividends", "competitors", "portfolio_builder",
     }},
 }
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    return bcrypt.checkpw(plain.encode(), hashed.encode())
 
 
 def create_token(user: User) -> str:

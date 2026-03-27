@@ -1,3 +1,4 @@
+import enum
 from datetime import datetime
 
 from pydantic import BaseModel, EmailStr
@@ -58,6 +59,38 @@ class PortfolioResponse(BaseModel):
     total_pnl: float
     positions_count: int
     profitable_positions: int
+    analysis: str
+
+
+class RiskStrategy(str, enum.Enum):
+    conservative = "conservative"
+    moderate     = "moderate"
+    aggressive   = "aggressive"
+
+
+class PortfolioBuilderRequest(BaseModel):
+    amount: float
+    risk_strategy: RiskStrategy
+
+
+class ETFAllocation(BaseModel):
+    ticker: str
+    name: str
+    asset_class: str
+    percentage: float
+    amount: float
+    shares: float
+    price: float
+
+
+class PortfolioBuilderResponse(BaseModel):
+    strategy: str
+    total_amount: float
+    expected_return_min: float
+    expected_return_max: float
+    max_drawdown: float
+    rebalancing_frequency: str
+    allocations: list[ETFAllocation]
     analysis: str
 
 
