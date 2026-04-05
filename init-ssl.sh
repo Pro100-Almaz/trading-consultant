@@ -18,6 +18,9 @@ if [ -z "$CERTBOT_EMAIL" ] || [ "$CERTBOT_EMAIL" = "your@email.com" ]; then
   exit 1
 fi
 
+echo "### Generating nginx config for $DOMAIN..."
+sed "s/\${DOMAIN}/$DOMAIN/g" nginx/nginx.conf.template > nginx/default.conf
+
 echo "### Obtaining SSL certificate for $DOMAIN..."
 docker compose run --rm \
   --publish 80:80 \
