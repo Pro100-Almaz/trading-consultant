@@ -7,11 +7,11 @@ services:
     environment:
       - DOMAIN=${DOMAIN}
     volumes:
-      - ./nginx/nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro
+      - ./nginx/nginx.conf.template:/etc/nginx/conf-templates/nginx.conf.template:ro
       - certbot_certs:/etc/letsencrypt:ro
       - certbot_www:/var/www/certbot:ro
     # Substitute ${DOMAIN} in template, then start nginx with 24h reload loop for cert renewal
-    command: "/bin/sh -c 'envsubst \"$${DOMAIN}\" < /etc/nginx/templates/nginx.conf.template > /etc/nginx/conf.d/default.conf && while :; do sleep 24h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    command: "/bin/sh -c 'envsubst \"$${DOMAIN}\" < /etc/nginx/conf-templates/nginx.conf.template > /etc/nginx/conf.d/default.conf && while :; do sleep 24h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
     depends_on:
       app:
         condition: service_healthy
