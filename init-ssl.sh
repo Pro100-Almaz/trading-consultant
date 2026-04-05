@@ -20,7 +20,7 @@ if [ -z "$CERTBOT_EMAIL" ] || [ "$CERTBOT_EMAIL" = "your@email.com" ]; then
 fi
 
 echo "### Creating dummy certificate so nginx can start..."
-mkdir -p "./nginx/certbot/conf/live/$DOMAIN"
+docker compose run --rm --entrypoint "mkdir -p /etc/letsencrypt/live/$DOMAIN" certbot
 docker compose run --rm --entrypoint "openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
   -keyout /etc/letsencrypt/live/$DOMAIN/privkey.pem \
   -out /etc/letsencrypt/live/$DOMAIN/fullchain.pem \
