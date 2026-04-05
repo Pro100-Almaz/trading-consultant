@@ -19,6 +19,7 @@ services:
 
   certbot:
     image: certbot/certbot
+    network_mode: bridge
     volumes:
       - certbot_certs:/etc/letsencrypt
       - certbot_www:/var/www/certbot
