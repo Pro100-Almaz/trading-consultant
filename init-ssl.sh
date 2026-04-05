@@ -27,9 +27,8 @@ docker compose run --rm --entrypoint "openssl req -x509 -nodes -newkey rsa:2048 
   -subj /CN=localhost" certbot
 
 echo "### Starting nginx with dummy certificate..."
-docker compose up -d nginx
-echo "Waiting for nginx..."
-sleep 5
+docker compose up -d --wait nginx
+echo "nginx is ready"
 
 echo "### Removing dummy certificate..."
 docker compose run --rm --entrypoint "rm -rf \
