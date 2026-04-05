@@ -4,11 +4,18 @@
 
 set -e
 
-DOMAIN="YOUR_DOMAIN"
-EMAIL="YOUR_EMAIL"
+# Load DOMAIN and CERTBOT_EMAIL from .env
+set -a
+source .env
+set +a
 
-if [ "$DOMAIN" = "YOUR_DOMAIN" ] || [ "$EMAIL" = "YOUR_EMAIL" ]; then
-  echo "ERROR: Set DOMAIN and EMAIL at the top of this script before running."
+if [ -z "$DOMAIN" ] || [ "$DOMAIN" = "your-domain.com" ]; then
+  echo "ERROR: Set DOMAIN in .env before running."
+  exit 1
+fi
+
+if [ -z "$CERTBOT_EMAIL" ] || [ "$CERTBOT_EMAIL" = "your@email.com" ]; then
+  echo "ERROR: Set CERTBOT_EMAIL in .env before running."
   exit 1
 fi
 
@@ -33,7 +40,7 @@ docker compose run --rm --entrypoint "rm -rf \
 echo "### Requesting real certificate from Let's Encrypt..."
 docker compose run --rm --entrypoint "certbot certonly --webroot \
   -w /var/www/certbot \
-  --email $EMAIL \
+  --email $CERTBOT_EMAIL \
   -d $DOMAIN \
   --rsa-key-size 4096 \
   --agree-tos \

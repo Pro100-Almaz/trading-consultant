@@ -4,12 +4,14 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN}
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro
       - certbot_certs:/etc/letsencrypt:ro
       - certbot_www:/var/www/certbot:ro
-    # Reload nginx every 24h to pick up renewed certificates
-    command: "/bin/sh -c 'while :; do sleep 24h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    # Substitute ${DOMAIN} in template, then start nginx with 24h reload loop for cert renewal
+    command: "/bin/sh -c 'envsubst \"$${DOMAIN}\" < /etc/nginx/templates/nginx.conf.template > /etc/nginx/conf.d/default.conf && while :; do sleep 24h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
     depends_on:
       app:
         condition: service_healthy
