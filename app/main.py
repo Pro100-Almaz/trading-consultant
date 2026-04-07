@@ -4,7 +4,7 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from app.api.v1 import analysis, auth
+from app.api.v1 import analysis, auth, strategies
 from app.dependencies import get_current_user, get_db
 from app.domain import models
 from app.domain.models import Plan, User
@@ -50,8 +50,9 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization", "ngrok-skip-browser-warning"],
 )
 
-app.include_router(auth.router,     prefix="/auth",    tags=["auth"])
-app.include_router(analysis.router, prefix="/analyze", tags=["analysis"])
+app.include_router(auth.router,       prefix="/auth",       tags=["auth"])
+app.include_router(analysis.router,   prefix="/analyze",    tags=["analysis"])
+app.include_router(strategies.router, prefix="/strategies", tags=["strategies"])
 
 
 @app.get("/user/profile", tags=["auth"])

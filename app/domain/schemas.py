@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import enum
 from datetime import datetime
 
@@ -92,6 +94,36 @@ class PortfolioBuilderResponse(BaseModel):
     rebalancing_frequency: str
     allocations: list[ETFAllocation]
     analysis: str
+
+
+class StrategyCreate(BaseModel):
+    name: str
+    description: str = ""
+    icon: str = "pie_chart"
+    color: str = "#6366F1"
+    symbols: list[str] = []
+
+
+class StrategyUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    icon: str | None = None
+    color: str | None = None
+    symbols: list[str] | None = None
+
+
+class StrategyResponse(BaseModel):
+    id: str
+    user_id: str
+    name: str
+    description: str
+    icon: str
+    color: str
+    symbols: list[str]
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
 
 
 class AnalysisHistoryItem(BaseModel):
