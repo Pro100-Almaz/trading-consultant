@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import base64
+import json
 from collections.abc import Generator
 
 from fastapi import Depends, HTTPException
@@ -35,3 +39,26 @@ def get_current_user(
     if not user:
         raise HTTPException(status_code=401, detail={"error": "invalidToken"})
     return user
+
+
+def decode_investlink_token(token: str) -> str:
+    """Декодирует JWT от Investlink без верификации подписи.
+    Возвращает user_id из payload (поле user_id или sub).
+    """
+    try:
+        parts = token.split(".")
+        if len(parts) != 3:
+            raise ValueError("invalid jwt")
+        padding = 4 - len(parts[1]) % 4
+        payload_bytes = base64.b64decode(parts[1] + "=" * padding)
+        payload = json.loads(payload_bytes)
+        user_id = payload.get("user_id") or payload.get("sub")
+        if not user_id:
+            raise ValueError("no user_id in token")
+        return str(user_id)
+    except Exception:
+        raise HTTPException(status_code=401, detail={"error": "unauthorized"})
+
+
+def get_investlink_user_id(token: str = Depends(oauth2_scheme)) -> str:
+    return decode_investlink_token(token)
